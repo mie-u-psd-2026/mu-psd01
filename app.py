@@ -172,10 +172,5 @@ def send_api():
         "processed_text": f"件名：{subject}\n\n{body}"
     })
 
-except Exception as e:
-    app.logger.error(f"Ollama API call failed: {e}")
-    return jsonify({"error": f"AIサービスとの通信中にエラーが発生しました。"}), 500
-
-
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
