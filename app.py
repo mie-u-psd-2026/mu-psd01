@@ -53,7 +53,7 @@ def send_api():
     ・件名と本文を分けて出力する
    """ 
     if 'context' in data and data['context'] and data['context'].strip():
-        system_prompt = data['context'].strip()
+        system_prompt += "\n\n追加条件:\n" + data['context'].strip()
         app.logger.info(f"Using custom system prompt from context: {system_prompt}")
     else:
         app.logger.info(f"Using default system prompt: {system_prompt}")
