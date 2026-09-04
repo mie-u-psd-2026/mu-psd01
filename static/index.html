@@ -261,6 +261,128 @@
             }
         }
 
+        /* ===== 生成結果 ===== */
+
+        .result-card {
+            background: #ffffff;
+            padding: 35px;
+            margin-bottom: 35px;
+
+            border-radius: 24px;
+            box-shadow: 0 6px 25px rgba(80, 60, 140, 0.08);
+        }
+
+        .result-card h2 {
+            margin-top: 0;
+            margin-bottom: 30px;
+
+            font-size: 26px;
+            color: #25233d;
+        }
+
+        .result-group {
+            margin-bottom: 25px;
+        }
+
+        .result-group label {
+            display: block;
+            margin-bottom: 8px;
+
+            font-weight: 600;
+            color: #34324a;
+        }
+
+        .result-row {
+            display: flex;
+            gap: 10px;
+        }
+
+        .result-row .form-control {
+            flex: 1;
+        }
+
+        .result-card .form-control {
+            border-radius: 12px;
+            border: 1px solid #ddd8ef;
+            padding: 12px 15px;
+            font-size: 16px;
+        }
+
+        .result-card .form-control:focus {
+            border-color: #7652e8;
+            box-shadow: 0 0 0 0.2rem rgba(118, 82, 232, 0.12);
+        }
+
+        .copy-button {
+            border: none;
+            border-radius: 10px;
+
+            padding: 0 18px;
+
+            color: #7652e8;
+            background: #f0ebff;
+
+            font-weight: 600;
+            cursor: pointer;
+
+            white-space: nowrap;
+        }
+
+        .copy-button:hover {
+            background: #e6ddff;
+        }
+
+        .body-copy-button {
+            margin-top: 10px;
+            padding: 9px 16px;
+        }
+
+        .regenerate-button {
+            width: 100%;
+
+            border: none;
+            border-radius: 14px;
+
+            padding: 14px;
+
+            font-size: 17px;
+            font-weight: 600;
+
+            color: #7652e8;
+            background: #f1edff;
+
+            cursor: pointer;
+        }
+
+        .regenerate-button:hover {
+            background: #e7e0ff;
+        }
+
+        .copy-message {
+            margin: 15px 0 0;
+
+            text-align: center;
+
+            color: #7652e8;
+            font-weight: 600;
+        }
+
+        /* スマホ */
+        @media (max-width: 768px) {
+
+            .result-card {
+                padding: 25px 20px;
+            }
+
+            .result-row {
+                flex-direction: column;
+            }
+
+            .copy-button {
+                padding: 11px;
+            }
+        }
+
     </style>
 </head>
 <body>
@@ -358,9 +480,75 @@
 
         </div>
         
-        <h3>結果:</h3>
-        <div class="result-area p-3 border rounded" :class="{ 'alert alert-info': resultText && !resultText.startsWith('エラー:'), 'alert alert-danger': resultText.startsWith('エラー:') }">
-            <pre style="white-space: pre-wrap;">{{ resultText }}</pre>
+        <!-- ===== 生成結果 ===== -->
+        <div class="result-card">
+
+            <h2>✉️ 生成結果</h2>
+
+            <!-- 件名 -->
+            <div class="result-group">
+                <label for="resultSubject">件名</label>
+
+                <div class="result-row">
+                    <input
+                        id="resultSubject"
+                        type="text"
+                        class="form-control"
+                        v-model="resultSubject"
+                        placeholder="ここに件名が表示されます"
+                    >
+
+                    <button
+                        @click="copySubject"
+                        class="copy-button">
+                        コピー
+                    </button>
+                </div>
+            </div>
+
+            <!-- 本文 -->
+            <div class="result-group">
+                <label for="resultBody">本文</label>
+
+                <textarea
+                    id="resultBody"
+                    class="form-control"
+                    rows="12"
+                    v-model="resultBody"
+                    placeholder="ここに生成されたメール本文が表示されます"
+                ></textarea>
+
+                <button
+                    @click="copyBody"
+                    class="copy-button body-copy-button">
+                    本文をコピー
+                </button>
+            </div>
+
+            <!-- 追加指示 -->
+            <div class="result-group">
+                <label for="additionalInstruction">追加指示</label>
+
+                <input
+                    id="additionalInstruction"
+                    type="text"
+                    class="form-control"
+                    v-model="additionalInstruction"
+                    placeholder="例：もう少し簡潔にしてください"
+                >
+            </div>
+
+            <button
+                @click="regenerate"
+                class="regenerate-button">
+                ↻ 再生成
+            </button>
+
+            <!-- コピー完了メッセージ -->
+            <p v-if="copyMessage" class="copy-message">
+                {{ copyMessage }}
+            </p>
+
         </div>
     </div>
 
@@ -371,7 +559,13 @@
             data() {
                 return {
                     inputText: '',
-                    resultText: 'ここに結果が表示されます。'
+
+                    resultSubject: '',
+                    resultBody: '',
+
+                    additionalInstruction: '',
+
+                    copyMessage: ''
                 };
             },
             methods: {
