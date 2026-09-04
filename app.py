@@ -160,7 +160,7 @@ def send_api():
     subject = result.get("subject")
     body = result.get("body")
 
-     if not subject or not body:
+    if not subject or not body:
         return jsonify({
             "error": "AIから件名または本文を取得できませんでした。"
         }), 500
