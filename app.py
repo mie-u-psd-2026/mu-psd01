@@ -127,6 +127,13 @@ def send_api():
                 "error": "AIから有効な応答がありませんでした"
             }), 500
 
+    except Exception as e:
+        app.logger.error(f"Ollama API call failed: {e}")
+
+        return jsonify({
+            "error": "AIサービスとの通信中にエラーが発生しました。"
+        }), 500  
+        
     try:
         json_match = re.search(
             r'```(?:json)?\s*(\{.*?\})\s*```',
