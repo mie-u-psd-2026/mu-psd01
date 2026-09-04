@@ -38,7 +38,18 @@ def send_api():
         app.logger.error("Received text is empty or whitespace.")
         return jsonify({"error": "Input text cannot be empty"}), 400
 
-    system_prompt = "140字以内で回答してください。"
+    system_prompt = """
+    あなたはビジネスメール作成アシスタントです。
+
+    ユーザーが入力した情報をもとに、適切なメール本文と件名を作成してください。
+
+    [重要なルール]
+    ・入力されていない事実を勝手に追加しない
+    ・元の内容を変えない
+    ・自然で適切な敬語を使用する
+    ・選択された文体に合わせる
+    ・件名と本文を分けて出力する
+   """ 
     if 'context' in data and data['context'] and data['context'].strip():
         system_prompt = data['context'].strip()
         app.logger.info(f"Using custom system prompt from context: {system_prompt}")
