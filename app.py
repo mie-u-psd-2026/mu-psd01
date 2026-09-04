@@ -31,26 +31,59 @@ def index():
 def send_api():
     data = request.get_json()
 
-    if not data or 'text' not in data:
-        app.logger.error("Request JSON is missing or does not contain 'text' field.")
-        return jsonify({"error": "Missing 'text' in request body"}), 400
+    if not data:
+        app.logger.error("Request JSON is missing.")
+        return jsonify({
+            "error": "リクエストデータがありません。"
+        }), 400
 
-    received_text = data['text']
-    if not received_text.strip():
-        app.logger.error("Received text is empty or whitespace.")
-        return jsonify({"error": "Input text cannot be empty"}), 400
+    required_fields = [
+        "sender",
+        "recipient",
+        "purpose",
+        "content",
+        "tone"
+    ]
+ 
+    for field in required_fields:
+        if field not in data or not str(data[field]).strip():
+            app.logger.error(f"Missing field: {field}")
+            return jsonify({
+                "error": f"{field}が入力されていません。"
+                }), 400
+
+    
+    sender = str(data["sender"]).strip()
+    recipient = str(data["recipient"]).strip()
+    purpose = str(data["purpose"]).strip()
+    content = str(data["content"]).strip()
+    tone = str(data["tone"]).strip()
 
     system_prompt = """
-    あなたはビジネスメール作成アシスタントです。
+    あなたは日本語のビジネスメールをAIです。
 
-    ユーザーが入力した情報をもとに、適切なメール本文と件名を作成してください。
+    ユーザーが入力した情報をもとに、
+    社会人が使用しても自然で失礼のないビジネスメールを作成して下さい。
 
-    [重要なルール]
+    以下のルールを必ず守ってください。
+
+    ・ユーザーが入力した内容を正しく反映する
     ・入力されていない事実を勝手に追加しない
+    ・名前、会社名、日付、場所などを勝手に作らない
+    ・送信相手との関係に適した敬語を使用する
+    ・読みやすく自然な日本語にする
     ・元の内容を変えない
-    ・自然で適切な敬語を使用する
-    ・選択された文体に合わせる
-    ・件名と本文を分けて出力する
+    ・指定された文章の雰囲気を反映する
+    ・メールの件名と本文を作成する
+    ・回答はJSON形式のみで返す
+
+
+    JSON形式：
+
+    {
+        "subject": "メールの件名",
+        "body":"メール本文"
+    }
    """ 
     if 'context' in data and data['context'] and data['context'].strip():
         system_prompt += "\n\n追加条件:\n" + data['context'].strip()
