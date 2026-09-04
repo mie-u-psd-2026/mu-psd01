@@ -85,29 +85,87 @@ def send_api():
         "body":"メール本文"
     }
    """ 
-    if 'context' in data and data['context'] and data['context'].strip():
-        system_prompt += "\n\n追加条件:\n" + data['context'].strip()
-        app.logger.info(f"Using custom system prompt from context: {system_prompt}")
-    else:
-        app.logger.info(f"Using default system prompt: {system_prompt}")
+
+    user_prompt = f"""
+以下の情報をもとに、適切なビジネスメールを作成してください。
+
+【あなたの立場】
+{sender}
+
+【送信相手】
+{recipient}
+
+【メールの目的】
+{purpose}
+
+【伝えたい内容】
+{content}
+
+【文章の雰囲気】
+{tone}
+"""
+
 
     try:
         chat_completion = client.chat.completions.create(
             messages=[
                 {"role": "system", "content": system_prompt},
-                {"role": "user", "content": received_text}
+                {"role": "user", "content": user_prompt}
             ],
             model=OLLAMA_MODEL,
         )
 
         if chat_completion.choices and chat_completion.choices[0].message:
-            processed_text = chat_completion.choices[0].message.content
+            ai_response = chat_completion.choices[0].message.content
         else:
-            processed_text = "AIから有効な応答がありませんでした。"
+            return jsonify({
+                "error": "AIから有効な応答がありませんでした"
+            }), 500
 
-        return jsonify({"message": "AIによってデータが処理されました。", "processed_text": processed_text})
+        if not ai_response:
+            return jsonify({
+                "error": "AIから有効な応答がありませんでした"
+            }), 500
 
-    except Exception as e:
+        try:
+            json_match = re.search(
+                r'```(?:json)?\s*(\{.*?\})\s*```',
+                ai_response,
+                re.DOTALL
+            )
+
+        if json_match:
+            json_text = json_match.group(1)
+        else:
+            json_text = ai_response.strip()
+
+        result = json.loads(json_text)
+
+        except json.JSONDecodeError:
+            app.logger.error(
+                f"Invalid JSON response from AI: {ai_response}"
+            )
+
+            return jsonify({
+                "error": "AIの解答を正しい形式として読み取れませんでした。"
+            }), 500
+
+            subject = result.get("subject")
+            body = result.get("body")
+
+            if not subject or not body:
+                return jsonify({
+                    "error": "AIから件名または本文を取得できませんでした。"
+                }), 500
+
+            return jsonify({
+                "messege": "AIによってメールが作成されました。",
+                "subject": subject,
+                "body": body,
+                "processed_text": f"件名：{subject}\n\n{body}"
+            })
+
+        except Exception as e:
         app.logger.error(f"Ollama API call failed: {e}")
         return jsonify({"error": f"AIサービスとの通信中にエラーが発生しました。"}), 500
 
