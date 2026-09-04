@@ -127,12 +127,12 @@ def send_api():
                 "error": "AIから有効な応答がありませんでした"
             }), 500
 
-        try:
-            json_match = re.search(
-                r'```(?:json)?\s*(\{.*?\})\s*```',
-                ai_response,
-                re.DOTALL
-            )
+    try:
+        json_match = re.search(
+            r'```(?:json)?\s*(\{.*?\})\s*```',
+            ai_response,
+            re.DOTALL
+        )
 
         if json_match:
             json_text = json_match.group(1)
@@ -141,33 +141,33 @@ def send_api():
 
         result = json.loads(json_text)
 
-        except json.JSONDecodeError:
-            app.logger.error(
-                f"Invalid JSON response from AI: {ai_response}"
-            )
+    except json.JSONDecodeError:
+        app.logger.error(
+            f"Invalid JSON response from AI: {ai_response}"
+        )
 
-            return jsonify({
-                "error": "AIの解答を正しい形式として読み取れませんでした。"
-            }), 500
+        return jsonify({
+            "error": "AIの解答を正しい形式として読み取れませんでした。"
+        }), 500
 
-            subject = result.get("subject")
-            body = result.get("body")
+    subject = result.get("subject")
+    body = result.get("body")
 
-            if not subject or not body:
-                return jsonify({
-                    "error": "AIから件名または本文を取得できませんでした。"
-                }), 500
+     if not subject or not body:
+        return jsonify({
+            "error": "AIから件名または本文を取得できませんでした。"
+        }), 500
 
-            return jsonify({
-                "messege": "AIによってメールが作成されました。",
-                "subject": subject,
-                "body": body,
-                "processed_text": f"件名：{subject}\n\n{body}"
-            })
+    return jsonify({
+        "messege": "AIによってメールが作成されました。",
+        "subject": subject,
+        "body": body,
+        "processed_text": f"件名：{subject}\n\n{body}"
+    })
 
-        except Exception as e:
-        app.logger.error(f"Ollama API call failed: {e}")
-        return jsonify({"error": f"AIサービスとの通信中にエラーが発生しました。"}), 500
+except Exception as e:
+    app.logger.error(f"Ollama API call failed: {e}")
+    return jsonify({"error": f"AIサービスとの通信中にエラーが発生しました。"}), 500
 
 
 if __name__ == '__main__':
