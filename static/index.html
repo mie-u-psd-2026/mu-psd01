@@ -397,6 +397,7 @@
 
             <div class="header-illustration">
                 <img src="header-illustration.png"
+                    onerror="this.src='/static/header-illustration.png'"
                     alt="メール作成をイメージしたイラスト">
             </div>
 
@@ -413,6 +414,7 @@
                     id="senderRole"
                     type="text"
                     class="form-control"
+                    v-model="senderRole"
                     placeholder="例：大学生、営業担当者など"
                 >
             </div>
@@ -424,6 +426,7 @@
                     id="recipient"
                     type="text"
                     class="form-control"
+                    v-model="recipient"
                     placeholder="例：インターンシップ先の人事担当者"
                 >
             </div>
@@ -431,13 +434,13 @@
             <!-- メールの目的 -->
             <div class="form-group">
                 <label for="purpose">メールの目的</label>
-                <select id="purpose" class="form-select">
-                    <option>インターンシップのお礼</option>
-                    <option>日程調整</option>
-                    <option>質問・問い合わせ</option>
-                    <option>お詫び</option>
-                    <option>その他</option>
-                </select>
+                <input
+                    id="purpose"
+                    type="text"
+                    class="form-control"
+                    v-model="purpose"
+                    placeholder="例：インターンシップのお礼、日程調整など"
+                >
             </div>
 
             <!-- 伝えたい内容 -->
@@ -458,24 +461,29 @@
 
                 <div class="tone-options">
                     <label>
-                        <input type="radio" name="tone" value="丁寧" checked>
+                        <input type="radio" name="tone" value="丁寧" v-model="tone">
                         丁寧
                     </label>
 
                     <label>
-                        <input type="radio" name="tone" value="標準">
+                        <input type="radio" name="tone" value="標準" v-model="tone">
                         標準
                     </label>
 
                     <label>
-                        <input type="radio" name="tone" value="やや柔らかい">
+                        <input type="radio" name="tone" value="やや柔らかい" v-model="tone">
                         やや柔らかい
                     </label>
                 </div>
             </div>
 
-            <button @click="execute" class="generate-button">
-                ✈️ メールを生成する
+            <button
+                @click="execute"
+                class="generate-button"
+                :disabled="loading"
+            >
+                <span v-if="loading">メールを生成しています...</span>
+                <span v-else>✈️ メールを生成する</span>
             </button>
 
         </div>
@@ -558,40 +566,54 @@
         createApp({
             data() {
                 return {
+                    senderRole: '',
+                    recipient: '',
+                    purpose: '',
                     inputText: '',
+                    tone: '丁寧',
 
                     resultSubject: '',
                     resultBody: '',
-
                     additionalInstruction: '',
+                    copyMessage: '',
 
-                    copyMessage: ''
+                    loading: false
                 };
             },
             methods: {
-                async sendRequest(context = null) {
-                    this.resultText = '処理中...';
+                async sendRequest() {
+                    this.loading = true;
+
                     try {
-                        const payload = { text: this.inputText };
-                        if (context) {
-                            payload.context = context;
-                        }
+                        const payload = {
+                            sender: this.senderRole,
+                            recipient: this.recipient,
+                            purpose: this.purpose,
+                            content: this.inputText,
+                            tone: this.tone
+                        };
 
                         const response = await fetch('/send_api', {
                             method: 'POST',
                             headers: {
-                                'Content-Type': 'application/json',
+                                'Content-Type': 'application/json'
                             },
                             body: JSON.stringify(payload)
                         });
+
                         const data = await response.json();
+
                         if (response.ok) {
-                            this.resultText = data.processed_text;
+                            this.resultSubject = data.subject;
+                            this.resultBody = data.body;
                         } else {
-                            this.resultText = `エラー: ${data.error || '不明なエラーが発生しました。'}`;
+                            alert(data.error || 'メールの生成に失敗しました。');
                         }
+
                     } catch (error) {
-                        this.resultText = `エラー: ${error.message}`;
+                        alert('サーバーとの通信に失敗しました。');
+                    } finally {
+                        this.loading = false;
                     }
                 },
                 execute() {
