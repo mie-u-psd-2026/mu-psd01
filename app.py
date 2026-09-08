@@ -157,7 +157,7 @@ def send_api():
                 ai_response
             )
 
-            result = json.loads(ai_response)
+        result = json.loads(ai_response)
 
 
     except Exception as e:
