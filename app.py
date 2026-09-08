@@ -139,18 +139,24 @@ def send_api():
         }), 500  
         
     try:
-        json_match = re.search(
-            r'```(?:json)?\s*(\{.*?\})\s*```',
-            ai_response,
-            re.DOTALL
-        )
 
-        if json_match:
-            json_text = json_match.group(1)
-        else:
-            json_text = ai_response.strip()
+        ai_response = ai_response.strip()
 
-        result = json.loads(json_text)
+        if ai_response.startswith("```"):
+            ai_response = re.sub(
+                r'^```(?:json)?\s*',
+                '',
+                ai_response
+            )
+
+            ai_response = re.sub(
+                r'\s*```$',
+                '',
+                ai_response
+            )
+
+            result = json.loads(ai_response)
+
 
     except json.JSONDecodeError:
         app.logger.error(
