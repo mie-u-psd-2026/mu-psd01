@@ -160,13 +160,12 @@ def send_api():
             result = json.loads(ai_response)
 
 
-    except json.JSONDecodeError:
-        app.logger.error(
-            f"Invalid JSON response from AI: {ai_response}"
-        )
+    except Exception as e:
+        app.logger.error(f"JSON parsing failed: {e}")
+        app.logger.error(f"AI response: {ai_response}")
 
         return jsonify({
-            "error": "AIの解答を正しい形式として読み取れませんでした。"
+            "error": "AIの回答を正しい形式として読み取れませんでした。"
         }), 500
 
     subject = result.get("subject")
