@@ -402,6 +402,19 @@
             background-color: #fff8f8;
         }
 
+        .api-error {
+            margin-bottom: 20px;
+            padding: 12px 15px;
+
+            border-radius: 10px;
+
+            background: #fff0f0;
+            border: 1px solid #f0b5b5;
+
+            color: #d64545;
+            font-weight: 600;
+        }
+
     </style>
 </head>
 <body>
@@ -430,6 +443,10 @@
                 <div v-for="message in errorMessages" :key="message">
                     ⚠ {{ message }}
                 </div>
+            </div>
+
+            <div v-if="apiError" class="api-error">
+                ⚠ {{ apiError }}
             </div>
 
             <!-- あなたの立場 -->
@@ -613,7 +630,8 @@
                     // ===== 状態管理 =====
                     loading: false,          // AI処理中かどうか
                     errorMessages: [],       // 入力エラーメッセージ
-                    errorFields: []          // エラーがある入力欄
+                    errorFields: [],         // エラーがある入力欄
+                    apiError: ''             // API通信エラー
                 };
             },
             methods: {
@@ -622,6 +640,7 @@
                     // 前回のエラーをリセット
                     this.errorMessages = [];
                     this.errorFields = [];
+                    this.apiError = '';
 
                     // ===== 入力チェック =====
                     if (!this.senderRole.trim()) {
@@ -679,12 +698,12 @@
                             this.resultSubject = data.subject;
                             this.resultBody = data.body;
                         } else {
-                            alert(data.error || 'メールの生成に失敗しました。');
+                            this.apiError = data.error || 'メールの生成に失敗しました。';
                         }
 
                     } catch (error) {
                         // 通信そのものに失敗した場合
-                        alert('サーバーとの通信に失敗しました。');
+                        this.apiError = 'サーバーとの通信に失敗しました。';
                     } finally {
                         // API処理終了
                         this.loading = false;
