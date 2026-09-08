@@ -383,6 +383,25 @@
             }
         }
 
+        /* ===== 　入力エラー時 ===== */
+        .input-error {
+            margin-bottom: 20px;
+            padding: 12px 15px;
+
+            border-radius: 10px;
+
+            background: #fff0f0;
+            border: 1px solid #f0b5b5;
+
+            color: #d64545;
+            font-weight: 600;
+        }
+
+        .input-error-border {
+            border: 2px solid #e05a5a !important;
+            background-color: #fff8f8;
+        }
+
     </style>
 </head>
 <body>
@@ -407,6 +426,12 @@
 
             <h2>✏️ 入力する</h2>
 
+            <div v-if="errorMessages.length > 0" class="input-error">
+                <div v-for="message in errorMessages" :key="message">
+                    ⚠ {{ message }}
+                </div>
+            </div>
+
             <!-- あなたの立場 -->
             <div class="form-group">
                 <label for="senderRole">あなたの立場</label>
@@ -415,6 +440,7 @@
                     type="text"
                     class="form-control"
                     v-model="senderRole"
+                    :class="{ 'input-error-border': errorFields.includes('senderRole') }"
                     placeholder="例：大学生、営業担当者など"
                 >
             </div>
@@ -427,6 +453,7 @@
                     type="text"
                     class="form-control"
                     v-model="recipient"
+                    :class="{ 'input-error-border': errorFields.includes('recipient') }"
                     placeholder="例：インターンシップ先の人事担当者"
                 >
             </div>
@@ -439,6 +466,7 @@
                     type="text"
                     class="form-control"
                     v-model="purpose"
+                    :class="{ 'input-error-border': errorFields.includes('purpose') }"
                     placeholder="例：インターンシップのお礼、日程調整など"
                 >
             </div>
@@ -451,6 +479,7 @@
                     class="form-control"
                     rows="6"
                     v-model="inputText"
+                    :class="{ 'input-error-border': errorFields.includes('inputText') }"
                     placeholder="ここに伝えたい内容を入力してください..."
                 ></textarea>
             </div>
@@ -566,25 +595,65 @@
         createApp({
             data() {
                 return {
-                    senderRole: '',
-                    recipient: '',
-                    purpose: '',
-                    inputText: '',
-                    tone: '丁寧',
+                    // ===== 入力内容 =====
+                    senderRole: '',          // あなたの立場
+                    recipient: '',           // 送信相手
+                    purpose: '',             // メールの目的
+                    inputText: '',           // 伝えたい内容
+                    tone: '丁寧',            // 文章の雰囲気
 
-                    resultSubject: '',
-                    resultBody: '',
-                    additionalInstruction: '',
-                    copyMessage: '',
+                    // ===== 生成結果 =====
+                    resultSubject: '',       // AIが生成した件名
+                    resultBody: '',          // AIが生成した本文
 
-                    loading: false
+                    // ===== 再生成・コピー =====
+                    additionalInstruction: '', // 再生成時の追加指示
+                    copyMessage: '',           // コピー完了メッセージ
+
+                    // ===== 状態管理 =====
+                    loading: false,          // AI処理中かどうか
+                    errorMessages: [],       // 入力エラーメッセージ
+                    errorFields: []          // エラーがある入力欄
                 };
             },
             methods: {
                 async sendRequest() {
+
+                    // 前回のエラーをリセット
+                    this.errorMessages = [];
+                    this.errorFields = [];
+
+                    // ===== 入力チェック =====
+                    if (!this.senderRole.trim()) {
+                        this.errorMessages.push('あなたの立場を入力してください。');
+                        this.errorFields.push('senderRole');
+                    }
+
+                    if (!this.recipient.trim()) {
+                        this.errorMessages.push('送信相手を入力してください。');
+                        this.errorFields.push('recipient');
+                    }
+
+                    if (!this.purpose.trim()) {
+                        this.errorMessages.push('メールの目的を入力してください。');
+                        this.errorFields.push('purpose');
+                    }
+
+                    if (!this.inputText.trim()) {
+                        this.errorMessages.push('伝えたい内容を入力してください。');
+                        this.errorFields.push('inputText');
+                    }
+
+                    // 入力エラーがあればAPIを呼ばずに終了
+                    if (this.errorMessages.length > 0) {
+                        return;
+                    }
+
+                    // ===== API通信開始 =====
                     this.loading = true;
 
                     try {
+                        // Vueで管理している入力内容をJSONにまとめる
                         const payload = {
                             sender: this.senderRole,
                             recipient: this.recipient,
@@ -593,6 +662,7 @@
                             tone: this.tone
                         };
 
+                        // FlaskのAPIへPOSTリクエストを送信
                         const response = await fetch('/send_api', {
                             method: 'POST',
                             headers: {
@@ -601,8 +671,10 @@
                             body: JSON.stringify(payload)
                         });
 
+                        // Flaskから返ってきたJSONを取得
                         const data = await response.json();
 
+                        // ===== APIの結果を画面に表示 =====
                         if (response.ok) {
                             this.resultSubject = data.subject;
                             this.resultBody = data.body;
@@ -611,16 +683,29 @@
                         }
 
                     } catch (error) {
+                        // 通信そのものに失敗した場合
                         alert('サーバーとの通信に失敗しました。');
                     } finally {
+                        // API処理終了
                         this.loading = false;
                     }
                 },
+
+                // 件名をクリップボードにコピー
+                copySubject() {
+                    navigator.clipboard.writeText(this.resultSubject);
+                    this.copyMessage = '件名をコピーしました。';
+                },
+
+                // 本文をクリップボードにコピー
+                copyBody() {
+                    navigator.clipboard.writeText(this.resultBody);
+                    this.copyMessage = '本文をコピーしました。';
+                },
+
+                // 「メールを生成する」ボタンから呼ばれる
                 execute() {
                     this.sendRequest();
-                },
-                execute_kansai() {
-                    this.sendRequest("あなたは親切な関西人です。ユーザーからの入力に対して、必ず関西弁で、親しみやすく、そして140字以内で回答してください。");
                 }
             }
         }).mount('#app');
