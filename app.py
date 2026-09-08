@@ -117,6 +117,8 @@ def send_api():
                 {"role": "user", "content": user_prompt}
             ],
             model=OLLAMA_MODEL,
+            response_format={"type": "json_object"},
+            temperature=0,
         )
 
         if chat_completion.choices and chat_completion.choices[0].message:
