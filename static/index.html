@@ -523,12 +523,13 @@
                 </div>
             </div>
 
+            <!-- メール生成ボタン -->
             <button
                 @click="execute"
                 class="generate-button"
-                :disabled="loading"
+                :disabled="generating || regenerating"
             >
-                <span v-if="loading">メールを生成しています...</span>
+                <span v-if="generating">メールを生成しています...</span>
                 <span v-else>✈️ メールを生成する</span>
             </button>
 
@@ -592,13 +593,13 @@
                 >
             </div>
 
-            <!-- 追加指示を反映してメールを再生成するボタン -->
+            <!-- 追加指示を反映して再生成するボタン -->
             <button
                 @click="regenerate"
                 class="regenerate-button"
-                :disabled="loading"
+                :disabled="generating || regenerating"
             >
-                <span v-if="loading">メールを再生成しています...</span>
+                <span v-if="regenerating">メールを再生成しています...</span>
                 <span v-else>↻ 再生成</span>
             </button>
 
@@ -632,7 +633,8 @@
                     copyMessage: '',           // コピー完了メッセージ
 
                     // ===== 状態管理 =====
-                    loading: false,          // AI処理中かどうか
+                    generating: false,       // 初回のメール生成中かどうか
+                    regenerating: false,     // 再生成中かどうか
                     errorMessages: [],       // 入力エラーメッセージ
                     errorFields: [],         // エラーがある入力欄
                     apiError: ''             // API通信エラー
@@ -673,7 +675,7 @@
                     }
 
                     // ===== API通信開始 =====
-                    this.loading = true;
+                    this.generating = true;
 
                     try {
                         // Vueで管理している入力内容をJSONにまとめる
@@ -710,7 +712,7 @@
                         this.apiError = 'サーバーとの通信に失敗しました。';
                     } finally {
                         // API処理終了
-                        this.loading = false;
+                        this.generating = false;
                     }
                 },
 
@@ -731,8 +733,8 @@
                     // 前回のAPIエラーをリセット
                     this.apiError = '';
 
-                    // 生成中の状態にする
-                    this.loading = true;
+                    // 再生成中の状態にする
+                    this.regenerating = true;
 
                     try {
                         // 入力内容と追加指示をJSONにまとめる
@@ -770,7 +772,7 @@
                         this.apiError = 'サーバーとの通信に失敗しました。';
                     } finally {
                         // 再生成処理終了
-                        this.loading = false;
+                        this.regenerating = false;
                     }
                 },
 
