@@ -115,6 +115,10 @@ def send_api():
     ・入力されていない内容を定型文で勝手に追加しない
     ・「どうもありがとうございました」など、不自然またはカジュアルすぎる表現は使用しない
     ・同じ意味の感謝表現を複数回繰り返さない
+    ・メールの目的がインターンシップのお礼の場合は、
+    「大変お世話になり、ありがとうございました」のような曖昧な表現を避ける
+    ・インターンシップのお礼では、「この度は、インターンシップに参加する機会をいただき、誠にありがとうございました」
+    など、何に対するお礼なのか具体的に分かる表現にする
 
     【件名】
     ・メールの内容がわかる簡潔な件名にする
@@ -183,7 +187,7 @@ def send_api():
             ],
             model=OLLAMA_MODEL,
             response_format={"type": "json_object"},
-            temperature=0,
+            temperature=0.4,
         )
 
         if chat_completion.choices and chat_completion.choices[0].message:
@@ -242,7 +246,7 @@ def send_api():
         }), 500
 
     return jsonify({
-        "messege": "AIによってメールが作成されました。",
+        "message": "AIによってメールが作成されました。",
         "subject": subject,
         "body": body,
         "processed_text": f"件名：{subject}\n\n{body}"
