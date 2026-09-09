@@ -58,6 +58,7 @@ def send_api():
     purpose = str(data["purpose"]).strip()
     content = str(data["content"]).strip()
     tone = str(data["tone"]).strip()
+    additional_instruction = str(data.get("additional_instruction", "")).strip()
 
     system_prompt = """
     あなたは日本語のビジネスメール作成を専門とするAIです。
@@ -176,6 +177,14 @@ def send_api():
 
 【文章の雰囲気】
 {tone}
+
+【追加指示】
+{additional_instruction}
+
+追加指示が入力されている場合は、その指示を反映してメールを再生成してください。
+追加指示が空の場合は、通常どおりメールを生成してください。
+
+ただし、元の入力内容の意味や事実は変更せず、追加指示にない情報を勝手に追加しないでください。
 """
 
 
