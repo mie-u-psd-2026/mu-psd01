@@ -180,7 +180,7 @@ def send_api():
 """
 
     if additional_instruction:
-    user_prompt += f"""
+        user_prompt += f"""
 
 【追加指示】
 {additional_instruction}
