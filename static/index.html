@@ -592,10 +592,14 @@
                 >
             </div>
 
+            <!-- 追加指示を反映してメールを再生成するボタン -->
             <button
                 @click="regenerate"
-                class="regenerate-button">
-                ↻ 再生成
+                class="regenerate-button"
+                :disabled="loading"
+            >
+                <span v-if="loading">メールを再生成しています...</span>
+                <span v-else>↻ 再生成</span>
             </button>
 
             <!-- コピー完了メッセージ -->
@@ -720,6 +724,54 @@
                 copyBody() {
                     navigator.clipboard.writeText(this.resultBody);
                     this.copyMessage = '本文をコピーしました。';
+                },
+
+                // 追加指示を反映してメールを再生成する
+                async regenerate() {
+                    // 前回のAPIエラーをリセット
+                    this.apiError = '';
+
+                    // 生成中の状態にする
+                    this.loading = true;
+
+                    try {
+                        // 入力内容と追加指示をJSONにまとめる
+                        const payload = {
+                            sender: this.senderRole,
+                            recipient: this.recipient,
+                            purpose: this.purpose,
+                            content: this.inputText,
+                            tone: this.tone,
+                            additional_instruction: this.additionalInstruction
+                        };
+
+                        // FlaskのAPIへ再生成リクエストを送信
+                        const response = await fetch('/send_api', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify(payload)
+                        });
+
+                        // Flaskから返ってきたJSONを取得
+                        const data = await response.json();
+
+                        // 再生成結果を画面に表示
+                        if (response.ok) {
+                            this.resultSubject = data.subject;
+                            this.resultBody = data.body;
+                        } else {
+                            this.apiError = data.error || 'メールの再生成に失敗しました。';
+                        }
+
+                    } catch (error) {
+                        // 通信そのものに失敗した場合
+                        this.apiError = 'サーバーとの通信に失敗しました。';
+                    } finally {
+                        // 再生成処理終了
+                        this.loading = false;
+                    }
                 },
 
                 // 「メールを生成する」ボタンから呼ばれる
